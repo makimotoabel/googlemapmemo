@@ -90,7 +90,6 @@ const ImportModal: React.FC<{ existingPlaces: Place[]; onImport: (places: Place[
   const [newPlaces, setNewPlaces] = useState<Place[]>([]);
   const [duplicates, setDuplicates] = useState<Place[]>([]);
   const [checkedDups, setCheckedDups] = useState<Set<string>>(new Set());
-  const [skipped, setSkipped] = useState(0);
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,7 +110,6 @@ const ImportModal: React.FC<{ existingPlaces: Place[]; onImport: (places: Place[
         setNewPlaces(news);
         setDuplicates(dups);
         setCheckedDups(new Set(dups.map(p => p.id)));
-        setSkipped(0);
         setStep('confirm');
       } catch (err: any) { setError(err.message || 'ファイルの読み込みに失敗しました'); }
     };
