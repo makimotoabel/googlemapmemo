@@ -19,16 +19,21 @@ export const savePlaces = (places: Place[]) => {
 export const parseGoogleTakeout = (json: any): Place[] => {
   const places: Place[] = [];
 
-  // Googleテイクアウトの形式: { features: [...] } または直接配列
-  const features = json?.features || json;
+  // FeatureCollection形式 or 直接配列
+  const features = json?.features || (Array.isArray(json) ? json : null);
   if (!Array.isArray(features)) return places;
 
   features.forEach((f: any) => {
-    const props = f?.properties || {};
+    if (!f) return;
+    const props = f.properties || f.Properties || {};
     const geo = f?.geometry?.coordinates;
-    const name = props?.Title || props?.name || '名称不明';
-    const address = props?.Address || props?.address || '';
-    const url = props?.['Google Maps URL'] || props?.url || '';
+
+    // 名前：日本語テイクアウトは properties.name
+    const name = props.name || props.Name || props.Title || props.title || '';
+    if (!name) return; // 名前がない場合はスキップ
+
+    const address = props.address || props.Address || props['住所'] || '';
+    const url = props['Google Maps URL'] || props.url || props.URL || '';
 
     places.push({
       id: crypto.randomUUID(),
