@@ -149,7 +149,14 @@ export default function App() {
     if (sortKey === 'category') return a.category.localeCompare(b.category, 'ja');
     return b.createdAt.localeCompare(a.createdAt);
   }), [places, search, filterCategory, filterTag, sortKey]);
-
+const isAllSelected = filtered.length > 0 && filtered.every(p => selected.has(p.id));
+const toggleSelectAll = () => {
+  if (isAllSelected) {
+    setSelected(new Set());
+  } else {
+    setSelected(new Set(filtered.map(p => p.id)));
+  }
+};
   const updatePlace = (updated: Place) => setPlaces(ps => ps.map(p => p.id === updated.id ? updated : p));
   const deletePlace = (id: string) => { if (window.confirm('この場所を削除しますか？')) { setPlaces(ps => ps.filter(p => p.id !== id)); setSelected(s => { s.delete(id); return new Set(s); }); } };
   const deleteSelected = () => { if (window.confirm(`${selected.size}件を削除しますか？`)) { setPlaces(ps => ps.filter(p => !selected.has(p.id))); setSelected(new Set()); } };
