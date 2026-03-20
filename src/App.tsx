@@ -67,7 +67,11 @@ const PlaceCard: React.FC<{
             </div>
             <div className="card__actions">
               <button className="icon-btn" onClick={() => setEditing(true)}><Edit3 size={15} /></button>
-              {place.url && <a className="icon-btn" href={place.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={15} /></a>}
+             <a className="icon-btn icon-btn--map"
+  href={place.url || `https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + place.address)}`}
+  target="_blank" rel="noopener noreferrer" title="Googleマップで開く">
+  <ExternalLink size={15} />
+</a>
               <button className="icon-btn icon-btn--danger" onClick={() => onDelete(place.id)}><Trash2 size={15} /></button>
             </div>
           </div>
