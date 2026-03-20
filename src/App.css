@@ -130,3 +130,5 @@ select.input { cursor: pointer; }
   .main { padding: 12px; }
   .grid { grid-template-columns: 1fr; }
 .icon-btn--map:hover { background: #e8f4fd; color: #1a73e8; }
+.card:focus { outline: 2px solid var(--primary); outline-offset: 2px; }
+.card:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
