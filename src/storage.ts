@@ -15,11 +15,8 @@ export const savePlaces = (places: Place[]) => {
   localStorage.setItem(KEY, JSON.stringify(places));
 };
 
-// GoogleテイクアウトのJSONをパース
 export const parseGoogleTakeout = (json: any): Place[] => {
   const places: Place[] = [];
-
-  // FeatureCollection形式 or 直接配列
   const features = json?.features || (Array.isArray(json) ? json : null);
   if (!Array.isArray(features)) return places;
 
@@ -27,14 +24,12 @@ export const parseGoogleTakeout = (json: any): Place[] => {
     if (!f) return;
     const props = f.properties || f.Properties || {};
     const geo = f?.geometry?.coordinates;
-
-    // 名前：日本語テイクアウトは properties.name
-    const name = props.name || props.Name || props.Title || props.title || '';
-    if (!name) return; // 名前がない場合はスキップ
-
-    const address = props.address || props.Address || props['住所'] || '';
-    const url = props['Google Maps URL'] || props.url || props.URL || '';
-
+    const location = props.location || {};
+    const name = location.name || props.name || props.Name || props.Title || props.title || '';
+    if (!name) return;
+    const address = location.address || props.address || props.Address || props['住所'] || '';
+    const url = props.google_maps_url || props['Google Maps URL'] || props.url || props.URL || '';
+    const hasCoords = geo && !(geo[0] === 0 && geo[1] === 0);
     places.push({
       id: crypto.randomUUID(),
       name,
@@ -43,13 +38,12 @@ export const parseGoogleTakeout = (json: any): Place[] => {
       tags: [],
       memo: '',
       url,
-      lat: geo ? geo[1] : undefined,
-      lng: geo ? geo[0] : undefined,
+      lat: hasCoords ? geo[1] : undefined,
+      lng: hasCoords ? geo[0] : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
   });
-
   return places;
 };
 
