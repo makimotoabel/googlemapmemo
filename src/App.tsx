@@ -84,8 +84,14 @@ const PlaceCard: React.FC<{
   );
 };
 
-const ImportModal: React.FC<{ onImport: (places: Place[]) => void; onClose: () => void }> = ({ onImport, onClose }) => {
+const ImportModal: React.FC<{ existingPlaces: Place[]; onImport: (places: Place[]) => void; onClose: () => void }> = ({ existingPlaces, onImport, onClose }) => {
   const [error, setError] = useState('');
+  const [step, setStep] = useState<'upload' | 'confirm'>('upload');
+  const [newPlaces, setNewPlaces] = useState<Place[]>([]);
+  const [duplicates, setDuplicates] = useState<Place[]>([]);
+  const [checkedDups, setCheckedDups] = useState<Set<string>>(new Set());
+  const [skipped, setSkipped] = useState(0);
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -93,29 +99,88 @@ const ImportModal: React.FC<{ onImport: (places: Place[]) => void; onClose: () =
     reader.onload = ev => {
       try {
         const json = JSON.parse(ev.target?.result as string);
-        const places = parseGoogleTakeout(json);
-        if (places.length === 0) throw new Error('場所データが見つかりませんでした');
-        onImport(places); onClose();
+        const parsed = parseGoogleTakeout(json);
+        if (parsed.length === 0) throw new Error('場所データが見つかりませんでした');
+        const existingNames = new Set(existingPlaces.map(p => p.name));
+        const dups: Place[] = [];
+        const news: Place[] = [];
+        parsed.forEach(p => {
+          if (existingNames.has(p.name)) dups.push(p);
+          else news.push(p);
+        });
+        setNewPlaces(news);
+        setDuplicates(dups);
+        setCheckedDups(new Set(dups.map(p => p.id)));
+        setSkipped(0);
+        setStep('confirm');
       } catch (err: any) { setError(err.message || 'ファイルの読み込みに失敗しました'); }
     };
     reader.readAsText(file);
   };
+
+  const toggleDup = (id: string) => setCheckedDups(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const selectAllDups = () => setCheckedDups(new Set(duplicates.map(p => p.id)));
+  const deselectAllDups = () => setCheckedDups(new Set());
+
+  const handleImport = () => {
+    const selectedDups = duplicates.filter(p => checkedDups.has(p.id));
+    onImport([...newPlaces, ...selectedDups]);
+    onClose();
+  };
+
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal" onClick={e => e.stopPropagation()}>
+      <div className="modal modal--wide" onClick={e => e.stopPropagation()}>
         <div className="modal__header">
-          <h2>Googleテイクアウトからインポート</h2>
+          <h2>{step === 'upload' ? 'Googleテイクアウトからインポート' : 'インポート確認'}</h2>
           <button className="icon-btn" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="modal__body">
-          <div className="steps">
-            <div className="step"><span className="step__num">1</span><div><strong>Googleテイクアウトにアクセス</strong><p><a href="https://takeout.google.com" target="_blank" rel="noopener noreferrer">takeout.google.com</a> を開く</p></div></div>
-            <div className="step"><span className="step__num">2</span><div><strong>「マップ（マイプレイス）」を選択</strong><p>他のチェックを外してマップだけ選ぶ</p></div></div>
-            <div className="step"><span className="step__num">3</span><div><strong>エクスポートしてダウンロード</strong><p>ZIPを解凍すると <code>Saved Places.json</code> が入っています</p></div></div>
-            <div className="step"><span className="step__num">4</span><div><strong>そのJSONファイルをここに読み込む</strong></div></div>
-          </div>
-          {error && <p className="error-msg">⚠️ {error}</p>}
-          <label className="file-upload"><Upload size={20} /><span>JSONファイルを選択</span><input type="file" accept=".json" onChange={handleFile} /></label>
+          {step === 'upload' ? (
+            <>
+              <div className="steps">
+                <div className="step"><span className="step__num">1</span><div><strong>Googleテイクアウトにアクセス</strong><p><a href="https://takeout.google.com" target="_blank" rel="noopener noreferrer">takeout.google.com</a> を開く</p></div></div>
+                <div className="step"><span className="step__num">2</span><div><strong>「マップ（マイプレイス）」を選択</strong><p>他のチェックを外してマップだけ選ぶ</p></div></div>
+                <div className="step"><span className="step__num">3</span><div><strong>エクスポートしてダウンロード</strong><p>ZIPを解凍すると <code>Saved Places.json</code> が入っています</p></div></div>
+                <div className="step"><span className="step__num">4</span><div><strong>そのJSONファイルをここに読み込む</strong></div></div>
+              </div>
+              {error && <p className="error-msg">⚠️ {error}</p>}
+              <label className="file-upload"><Upload size={20} /><span>JSONファイルを選択</span><input type="file" accept=".json" onChange={handleFile} /></label>
+            </>
+          ) : (
+            <>
+              <div className="import-summary">
+                <div className="import-stat import-stat--new"><span className="import-stat__num">{newPlaces.length}</span><span>新規</span></div>
+                <div className="import-stat import-stat--dup"><span className="import-stat__num">{duplicates.length}</span><span>重複候補</span></div>
+              </div>
+              {duplicates.length > 0 && (
+                <>
+                  <p className="import-hint">重複候補：チェックを入れた場合は上書きして追加されます</p>
+                  <div className="dup-actions">
+                    <button className="btn btn--ghost btn--sm" onClick={selectAllDups}>全選択</button>
+                    <button className="btn btn--ghost btn--sm" onClick={deselectAllDups}>全解除</button>
+                  </div>
+                  <div className="dup-list">
+                    {duplicates.map(p => (
+                      <label key={p.id} className="dup-item">
+                        <input type="checkbox" checked={checkedDups.has(p.id)} onChange={() => toggleDup(p.id)} />
+                        <div className="dup-item__info">
+                          <span className="dup-item__name">{p.name}</span>
+                          {p.address && <span className="dup-item__addr">{p.address}</span>}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+              <div className="import-actions">
+                <button className="btn btn--ghost" onClick={() => setStep('upload')}>戻る</button>
+                <button className="btn btn--primary" onClick={handleImport}>
+                  {newPlaces.length + checkedDups.size}件をインポート
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -254,7 +319,7 @@ export default function App() {
         )}
       </main>
 
-      {showImport && <ImportModal onImport={handleImport} onClose={() => setShowImport(false)} />}
+      {showImport && <ImportModal existingPlaces={places} onImport={handleImport} onClose={() => setShowImport(false)} />}
     </div>
   );
 }
