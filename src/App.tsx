@@ -32,10 +32,10 @@ const PlaceCard: React.FC<{
 
   return (
     <div
-  className={`card ${selected ? 'card--selected' : ''}`}
-  tabIndex={0}
-  onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onSelect(place.id); } }}
->
+      className={`card ${selected ? 'card--selected' : ''}`}
+      tabIndex={0}
+      onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onSelect(place.id); } }}
+    >
       <div className="card__select" onClick={() => onSelect(place.id)}>
         <div className={`checkbox ${selected ? 'checkbox--checked' : ''}`}>
           {selected && <Check size={12} />}
@@ -71,11 +71,7 @@ const PlaceCard: React.FC<{
             </div>
             <div className="card__actions">
               <button className="icon-btn" onClick={() => setEditing(true)}><Edit3 size={15} /></button>
-             <a className="icon-btn icon-btn--map"
-  href={place.url || `https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + place.address)}`}
-  target="_blank" rel="noopener noreferrer" title="Googleマップで開く">
-  <ExternalLink size={15} />
-</a>
+              <a className="icon-btn icon-btn--map" href={place.url || `https://www.google.com/maps/search/${encodeURIComponent(place.name + ' ' + place.address)}`} target="_blank" rel="noopener noreferrer" title="Googleマップで開く"><ExternalLink size={15} /></a>
               <button className="icon-btn icon-btn--danger" onClick={() => onDelete(place.id)}><Trash2 size={15} /></button>
             </div>
           </div>
@@ -153,14 +149,15 @@ export default function App() {
     if (sortKey === 'category') return a.category.localeCompare(b.category, 'ja');
     return b.createdAt.localeCompare(a.createdAt);
   }), [places, search, filterCategory, filterTag, sortKey]);
-const isAllSelected = filtered.length > 0 && filtered.every(p => selected.has(p.id));
-const toggleSelectAll = () => {
-  if (isAllSelected) {
-    setSelected(new Set());
-  } else {
-    setSelected(new Set(filtered.map(p => p.id)));
-  }
-};
+
+  const isAllSelected = filtered.length > 0 && filtered.every(p => selected.has(p.id));
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map(p => p.id)));
+    }
+  };
   const updatePlace = (updated: Place) => setPlaces(ps => ps.map(p => p.id === updated.id ? updated : p));
   const deletePlace = (id: string) => { if (window.confirm('この場所を削除しますか？')) { setPlaces(ps => ps.filter(p => p.id !== id)); setSelected(s => { s.delete(id); return new Set(s); }); } };
   const deleteSelected = () => { if (window.confirm(`${selected.size}件を削除しますか？`)) { setPlaces(ps => ps.filter(p => !selected.has(p.id))); setSelected(new Set()); } };
@@ -205,11 +202,12 @@ const toggleSelectAll = () => {
             {search && <button className="search-clear" onClick={() => setSearch('')}><X size={14} /></button>}
           </div>
           <div className="toolbar__right">
-           {filtered.length > 0 && (
-  <button className={`btn btn--sm ${isAllSelected ? 'btn--primary' : 'btn--ghost'}`} onClick={toggleSelectAll}>
-    <Check size={14} /> {isAllSelected ? '全解除' : '全選択'}
-  </button>
-)} <select className="select-sm" value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}>
+            {filtered.length > 0 && (
+              <button className={`btn btn--sm ${isAllSelected ? 'btn--primary' : 'btn--ghost'}`} onClick={toggleSelectAll}>
+                <Check size={14} /> {isAllSelected ? '全解除' : '全選択'}
+              </button>
+            )}
+            <select className="select-sm" value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}>
               <option value="createdAt">追加順</option>
               <option value="name">名前順</option>
               <option value="category">カテゴリ順</option>
