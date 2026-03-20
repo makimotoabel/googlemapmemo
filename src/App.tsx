@@ -31,7 +31,11 @@ const PlaceCard: React.FC<{
   const emoji = CATEGORY_EMOJIS[place.category] || '📍';
 
   return (
-    <div className={`card ${selected ? 'card--selected' : ''}`}>
+    <div
+  className={`card ${selected ? 'card--selected' : ''}`}
+  tabIndex={0}
+  onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); onSelect(place.id); } }}
+>
       <div className="card__select" onClick={() => onSelect(place.id)}>
         <div className={`checkbox ${selected ? 'checkbox--checked' : ''}`}>
           {selected && <Check size={12} />}
@@ -201,7 +205,11 @@ const toggleSelectAll = () => {
             {search && <button className="search-clear" onClick={() => setSearch('')}><X size={14} /></button>}
           </div>
           <div className="toolbar__right">
-            <select className="select-sm" value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}>
+           {filtered.length > 0 && (
+  <button className={`btn btn--sm ${isAllSelected ? 'btn--primary' : 'btn--ghost'}`} onClick={toggleSelectAll}>
+    <Check size={14} /> {isAllSelected ? '全解除' : '全選択'}
+  </button>
+)} <select className="select-sm" value={sortKey} onChange={e => setSortKey(e.target.value as SortKey)}>
               <option value="createdAt">追加順</option>
               <option value="name">名前順</option>
               <option value="category">カテゴリ順</option>
